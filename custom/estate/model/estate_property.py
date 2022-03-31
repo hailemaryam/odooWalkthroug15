@@ -42,6 +42,15 @@ class EstateProperty(models.Model):
         ('positive_selling_price', 'CHECK(selling_price >= 0)', 'the price should only have positive value.')
     ]
 
+    @api.ondelete(at_uninstall=False)
+    def _unlink_if_new_or_canceled(self):
+        for record in self:
+            print(record.state)
+            if not (record.state == 'New' or record.state == 'Canceled'):
+                raise UserError("Can't delete record because it is not new or canceled.")
+            else:
+                print("it can be deleted and I am going to delete it ...")
+
     @api.constrains('expected_price', 'selling_price')
     def _check_percentage(self):
         if self.expected_price > 0:
