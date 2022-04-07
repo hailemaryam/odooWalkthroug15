@@ -1,5 +1,6 @@
 from odoo import models, fields, api
 from datetime import date, datetime, timedelta
+from odoo.exceptions import ValidationError
 
 
 class EstatePropertyOffer(models.Model):
@@ -20,6 +21,17 @@ class EstatePropertyOffer(models.Model):
     _sql_constraints = [
         ('positive_price', 'CHECK(price > 0)', 'the price can only have positive value.')
     ]
+
+    @api.model
+    def create(self, vals_list):
+        offers = self.env['estate.property.offer'].search([('property_id', '=', vals_list['property_id'])])
+        max_offer = 0
+        for offer in offers:
+            if offer.price > max_offer:
+                max_offer = offer.price
+        if vals_list['price'] < max_offer:
+            raise ValidationError("New offer should be greater that existing offer.")
+        return super().create(vals_list)
 
     @api.depends('property_id')
     def _compute_property_type_id(self):
